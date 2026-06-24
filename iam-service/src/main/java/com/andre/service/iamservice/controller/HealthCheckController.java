@@ -1,6 +1,6 @@
 package com.andre.service.iamservice.controller;
 
-import com.andre.service.iamservice.HealthCheckService;
+import com.andre.service.iamservice.services.HealthCheckService;
 import com.andre.service.iamservice.dto.HealthCheckResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

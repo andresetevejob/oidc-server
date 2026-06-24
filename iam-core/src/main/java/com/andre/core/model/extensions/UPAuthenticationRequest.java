@@ -7,7 +7,7 @@ public record UPAuthenticationRequest(ClientId clientId, String password) implem
     AuthenticationRequest<UPCredentialsType> {
 
     @Override
-    public UPCredentialsType getCredentials() {
+    public UPCredentialsType getCredentialsType() {
         return new UPCredentialsType();
     }
 }

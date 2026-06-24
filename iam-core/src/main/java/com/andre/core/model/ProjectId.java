@@ -1,6 +1,6 @@
 package com.andre.core.model;
 
-public class ProjectId extends Id {
+public final class ProjectId extends Id {
     public ProjectId(final String id) {
         super(id);
     }

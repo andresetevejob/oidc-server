@@ -1,4 +1,3 @@
 package com.andre.core.model;
 
-public interface CredentialsType {
-}
+public interface CredentialsType {}

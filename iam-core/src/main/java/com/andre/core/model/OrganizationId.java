@@ -1,6 +1,6 @@
 package com.andre.core.model;
 
-public class OrganizationId extends Id {
+public final class OrganizationId extends Id {
     public OrganizationId(final String id) {
         super(id);
     }

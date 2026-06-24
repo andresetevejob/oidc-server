@@ -1,4 +1,4 @@
-package com.andre.service.iamservice;
+package com.andre.service.iamservice.services;
 
 
 import com.andre.service.iamservice.dto.HealthCheckResponse;

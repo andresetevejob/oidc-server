@@ -7,7 +7,6 @@ import com.andre.core.model.OrganizationId;
 import com.andre.core.services.admin.OrganizationService;
 import com.andre.core.services.dto.CreateOrganizationRequest;
 import java.util.Collection;
-import java.util.List;
 
 public class OrganizationServiceImpl implements OrganizationService {
 

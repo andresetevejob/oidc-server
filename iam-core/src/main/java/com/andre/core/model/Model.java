@@ -8,4 +8,5 @@ public interface Model {
     Collection<Organization> getOrganizations();
     void remove(OrganizationId organizationId);
     Optional<Client> getClient(ClientId clientId);
+    Optional<Project> getProject(ProjectId projectId);
 }

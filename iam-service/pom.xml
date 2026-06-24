@@ -22,6 +22,11 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webmvc</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.andre</groupId>
+      <artifactId>iam-core</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
