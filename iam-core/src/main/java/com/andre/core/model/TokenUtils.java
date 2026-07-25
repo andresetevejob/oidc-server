@@ -5,16 +5,13 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.impl.DefaultClaims;
+
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Date;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class TokenUtils {
@@ -59,43 +56,37 @@ public class TokenUtils {
         }
     }
 
-    public static JWToken issueToken(String subject, String issuer, Long duration,
-        TimeUnit timeUnit, String audience, Set<String> roles, KeyPair keyPair) {
-        final Date issuedAt = new Date();
-        final Date notBefore = issuedAt;
+    public static JWToken issueToken(OrganizationId organizationId, ProjectId projectId, ClientId clientId, Long duration, TimeUnit timeUnit, Set<String> roles, KeyPair keyPair) {
+        Date issuedAt = new Date();
+        Date notBefore = issuedAt;
         Date expirationTime = new Date(issuedAt.getTime() + timeUnit.toMillis(duration));
-        return issueToken(subject, issuer, audience, expirationTime, notBefore, issuedAt, roles,
-            keyPair);
+        return issueToken(clientId.getId(), organizationId.getId(), projectId.getId(), expirationTime, notBefore, issuedAt, roles, keyPair);
     }
 
-    public static JWToken issueToken(String subject, String issuer, String audience,
-        Date expirationTime, Date notBefore, Date issuedAt, Set<String> roles,
-        KeyPair keyPair) {
-        final Random random = new Random();
-        final String jwToken = Jwts.builder()
-            .setSubject(subject)
-            .setIssuer(issuer)
-            .signWith(keyPair.getPrivate())
-            .setIssuedAt(issuedAt)
-            .setNotBefore(notBefore)
-            .setExpiration(expirationTime)
-            .setAudience(audience)
-            .claim(ROLES_CLAIM, roles)
-            .claim(NONCE, random.nextLong())
-            .compact();
-        return new JWToken(jwToken);
+    public static JWToken issueToken(String subject, String issuer, String audience, Date expirationTime, Date notBefore, Date issuedAt, Set<String> roles, KeyPair keyPair) {
+        String jwToken = Jwts.builder()
+                .setSubject(subject)
+                .signWith(keyPair.getPrivate())
+                .setExpiration(expirationTime)
+                .setIssuer(issuer)
+                .setIssuedAt(issuedAt)
+                .setNotBefore(notBefore)
+                .setAudience(audience)
+                .claim(ROLES_CLAIM, roles)
+                .setId(UUID.randomUUID().toString())
+                .compact();
+        return JWToken.from(jwToken);
     }
 
-    public static Optional<Jws<Claims>> verify(final JWToken jwToken, final KeyPair keyPair) {
+    public static Optional<Jws<Claims>> verify(JWToken jwToken, KeyPair keyPair) {
         try {
-            final Jws<Claims> claimsJws = Jwts.parserBuilder().setSigningKey(keyPair.getPrivate())
-                .build()
-                .parseClaimsJws(jwToken.token());
+            Jws<Claims> claimsJws = Jwts.parserBuilder().setSigningKey(keyPair.getPrivate()).build().parseClaimsJws(jwToken.token());
             return Optional.of(claimsJws);
         } catch (Exception e) {
             return Optional.empty();
         }
     }
+
     @SuppressWarnings("unchecked")
     public static DefaultClaims extractClaims(JWToken jwToken) {
         String token = jwToken.token();

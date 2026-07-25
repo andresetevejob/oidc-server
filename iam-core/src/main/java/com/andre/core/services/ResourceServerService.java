@@ -1,5 +1,7 @@
 package com.andre.core.services;
 
+import com.andre.core.model.OrganizationId;
+import com.andre.core.model.ProjectId;
 import com.andre.core.services.dto.JWToken;
 
 /**
@@ -14,6 +16,6 @@ public interface ResourceServerService {
      * @param token {@link JWToken} to verify.
      * @return true if provided {@link JWToken} is valid, false otherwise.
      */
-    boolean verify(JWToken token);
+    boolean verify(OrganizationId organizationId, ProjectId projectId,JWToken token);
 
 }

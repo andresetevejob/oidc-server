@@ -6,7 +6,7 @@ import java.util.Optional;
 public interface Model {
     void add(Organization organization);
     Collection<Organization> getOrganizations();
-    void remove(OrganizationId organizationId);
-    Optional<Client> getClient(ClientId clientId);
-    Optional<Project> getProject(ProjectId projectId);
+    Optional<Organization> getOrganization(OrganizationId organizationId);
+    boolean remove(OrganizationId organizationId);
+    Optional<Client> getClient(OrganizationId organizationId, ProjectId projectId, ClientId clientId);
 }

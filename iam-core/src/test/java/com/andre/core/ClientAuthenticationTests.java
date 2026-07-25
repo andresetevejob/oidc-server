@@ -15,6 +15,7 @@ import com.andre.core.services.ResourceServerService;
 import com.andre.core.services.dto.JWToken;
 import com.andre.core.services.impl.ClientServiceImpl;
 import com.andre.core.services.impl.ResourceServerServiceImpl;
+import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -23,7 +24,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class ClientTests {
+class ClientAuthenticationTests {
+
+    private static final String adminPassword = "top-secret";
+
     private static Model model;
     private static ClientService clientService;
     private static ResourceServerService resourceServerService;
@@ -31,56 +35,66 @@ class ClientTests {
     private static JWToken token;
 
     @BeforeAll
-    static void init(){
-        model = ModelUtils.createDefaultModel();
+    static void init() {
+        model = ModelUtils.createDefaultModel(adminPassword);
         tokenCache = new TokenCacheImpl(model);
         clientService = new ClientServiceImpl(model, tokenCache);
         resourceServerService = new ResourceServerServiceImpl(model, tokenCache);
     }
+
     @Test
     @Order(1)
     void authenticateTest() {
-        final UPAuthenticationRequest authenticationRequest = new UPAuthenticationRequest(ClientId.from("iam-admin-id"), "iam-secret-77");
-        final Optional<JWToken> tokenOptional = clientService.authenticate(authenticationRequest);
+        UPAuthenticationRequest authenticationRequest = new UPAuthenticationRequest(ModelUtils.IAM_ADMIN_CLIENT, adminPassword);
+        Optional<JWToken> tokenOptional = clientService.authenticate(ModelUtils.IAM_ADMINS_ORG, ModelUtils.IAM_ADMINS_PROJECT, authenticationRequest);
         assertTrue(tokenOptional.isPresent());
         token = tokenOptional.get();
     }
+
     @Test
     @Order(2)
     void verifyValidTokenTest() {
-        final boolean result = resourceServerService.verify(token);
+        boolean result = resourceServerService.verify(ModelUtils.IAM_ADMINS_ORG, ModelUtils.IAM_ADMINS_PROJECT, token);
         assertTrue(result);
     }
 
     @Test
     @Order(3)
     void renewTokenTest() {
-        final Optional<JWToken> tokenOptional = clientService.renew(token);
-        final boolean result = resourceServerService.verify(token);
+        Optional<JWToken> tokenOptional = clientService.renew(ModelUtils.IAM_ADMINS_ORG, ModelUtils.IAM_ADMINS_PROJECT, token);
+        boolean result = resourceServerService.verify(ModelUtils.IAM_ADMINS_ORG, ModelUtils.IAM_ADMINS_PROJECT, token);
         assertFalse(result);
         assertTrue(tokenOptional.isPresent());
-        assertNotEquals(token, tokenOptional.get());
+        assertFalse(token.equals(tokenOptional.get()));
         token = tokenOptional.get();
     }
 
     @Test
     @Order(4)
-    void logoutTest() {
-        final boolean result = clientService.logout(token);
+    void verifyValidRenewedTokenTest() {
+        boolean result = resourceServerService.verify(ModelUtils.IAM_ADMINS_ORG, ModelUtils.IAM_ADMINS_PROJECT, token);
         assertTrue(result);
     }
 
     @Test
     @Order(5)
-    void verifyInvalidTokenTest() {
-        final boolean result = resourceServerService.verify(token);
-        assertFalse(result);
+    void logoutTest() {
+        boolean result = clientService.logout(ModelUtils.IAM_ADMINS_ORG, ModelUtils.IAM_ADMINS_PROJECT, token);
+        assertTrue(result);
     }
 
     @Test
     @Order(6)
+    void verifyInvalidTokenTest() {
+        boolean result = resourceServerService.verify(ModelUtils.IAM_ADMINS_ORG, ModelUtils.IAM_ADMINS_PROJECT, token);
+        assertFalse(result);
+    }
+
+    @Test
+    @Order(7)
     void verifyInvalidTokenRenewTest() {
-        final Optional<JWToken> tokenOptional = clientService.renew(token);
+        Optional<JWToken> tokenOptional = clientService.renew(ModelUtils.IAM_ADMINS_ORG, ModelUtils.IAM_ADMINS_PROJECT, token);
         assertTrue(tokenOptional.isEmpty());
     }
+
 }

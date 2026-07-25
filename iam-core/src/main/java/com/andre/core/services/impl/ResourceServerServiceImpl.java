@@ -3,6 +3,8 @@ package com.andre.core.services.impl;
 import com.andre.core.model.Client;
 import com.andre.core.model.ClientId;
 import com.andre.core.model.Model;
+import com.andre.core.model.OrganizationId;
+import com.andre.core.model.ProjectId;
 import com.andre.core.model.TokenCache;
 import com.andre.core.model.TokenUtils;
 import com.andre.core.services.ResourceServerService;
@@ -26,12 +28,12 @@ public class ResourceServerServiceImpl implements ResourceServerService {
     }
 
     @Override
-    public boolean verify(final JWToken token) {
+    public boolean verify(final OrganizationId organizationId, final ProjectId projectId,final JWToken token) {
         final boolean isRevoked = this.tokenCache.isRevoked(token);
         if (!isRevoked) {
             final DefaultClaims defaultClaims = TokenUtils.extractClaims(token);
             final ClientId clientId = ClientId.from(defaultClaims.getSubject());
-            final Optional<Client> client = this.model.getClient(clientId);
+            final Optional<Client> client = this.model.getClient(organizationId, projectId, clientId);
             if (client.isPresent()) {
                 final Optional<Jws<Claims>> claimsJws = TokenUtils.verify(token,
                     client.get().getKeyPair());

@@ -1,44 +1,70 @@
 package com.andre.core.model;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Project {
-  private final ProjectId id;
-  private final OrganizationId organizationId;
-  private final String name;
-  private final ModelImpl model;
 
-  public Project(ProjectId id, String name, OrganizationId organizationId, ModelImpl model) {
-    this.id = id;
-    this.name = name;
-    this.model = model;
-    this.organizationId = organizationId;
-  }
+    private final ProjectId id;
+    private final OrganizationId organizationId;
+    private final String name;
+    private final Map<ClientId, Client> clients;
+    private final Map<RoleId, Role> roles;
 
-  public ProjectId getId() {
-    return id;
-  }
+    public Project(ProjectId id, String name, OrganizationId organizationId) {
+        this.id = id;
+        this.name = name;
+        this.clients = new ConcurrentHashMap<>();
+        this.organizationId = organizationId;
+        this.roles = new ConcurrentHashMap<>();
+    }
 
-  public String getName() {
-    return name;
-  }
+    public ProjectId getId() {
+        return id;
+    }
 
-  public OrganizationId getOrganizationId() {
-    return organizationId;
-  }
+    public String getName() {
+        return name;
+    }
 
-  public void add(Client client) {
-    model.getClients().put(client.getId(), client);
-  }
+    public OrganizationId getOrganizationId() {
+        return organizationId;
+    }
 
-  public Collection<Client> getAllClients() {
-    return model.getClients().values().stream()
-        .filter(client -> client.getProjectId().equals(id))
-        .collect(Collectors.toList());
-  }
+    public void add(Client client) {
+        clients.put(client.getId(), client);
+    }
 
-  public void remove(ClientId clientId) {
-    model.getClients().remove(clientId);
-  }
+    public Collection<Client> getAllClients() {
+        return clients.values().stream()
+            .filter(client -> client.getProjectId().equals(id))
+            .toList();
+    }
+
+    public boolean remove(ClientId clientId) {
+        return clients.remove(clientId) != null;
+    }
+
+    public Optional<Client> getClient(ClientId clientId) {
+        return Optional.ofNullable(clients.get(clientId));
+    }
+
+    public void addRole(Role role) {
+        roles.put(role.getId(), role);
+    }
+
+    public Optional<Role> getRole(RoleId id) {
+        return Optional.ofNullable(roles.get(id));
+    }
+
+    public Collection<Role> getRoles() {
+        return new ArrayList<>(roles.values());
+    }
+
+    public boolean removeRole(RoleId id) {
+        return roles.remove(id) != null;
+    }
 }

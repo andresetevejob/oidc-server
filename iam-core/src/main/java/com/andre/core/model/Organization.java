@@ -1,38 +1,47 @@
 package com.andre.core.model;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class Organization {
-  private final OrganizationId id;
-  private final String name;
-  private final ModelImpl model;
 
-  public Organization(OrganizationId id, String name, ModelImpl model) {
-    this.id = id;
-    this.name = name;
-    this.model = model;
-  }
+    private final OrganizationId id;
+    private final String name;
+    private final Map<ProjectId, Project> projects;
 
-  public OrganizationId getId() {
-    return id;
-  }
+    public Organization(OrganizationId id, String name) {
+        this.id = id;
+        this.name = name;
+        this.projects = new ConcurrentHashMap<>();
+    }
 
-  public String getName() {
-    return name;
-  }
+    public OrganizationId getId() {
+        return id;
+    }
 
-  public void add(Project project) {
-    model.getProjects().put(project.getId(), project);
-  }
+    public String getName() {
+        return name;
+    }
 
-  public Collection<Project> getProjects() {
-    return model.getProjects().values().stream()
-        .filter(project -> project.getOrganizationId().equals(id))
-        .collect(Collectors.toList());
-  }
+    public void add(Project project) {
+        projects.put(project.getId(), project);
+    }
 
-  public void remove(ProjectId projectId) {
-    model.getProjects().remove(projectId);
-  }
+    public Collection<Project> getProjects() {
+        return projects.values().stream()
+                .filter(project -> project.getOrganizationId().equals(id))
+                .collect(Collectors.toList());
+    }
+
+    public boolean remove(ProjectId projectId) {
+        return projects.remove(projectId) != null;
+    }
+
+    public Optional<Project> getProject(ProjectId projectId) {
+        return Optional.ofNullable(projects.get(projectId));
+    }
+
 }

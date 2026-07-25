@@ -5,8 +5,12 @@ import java.util.UUID;
 
 public class ModelUtils {
 
-    private ModelUtils() {
-    }
+    private static final String IAM_ADMINS_NAME = "iam-admins";
+    public static final OrganizationId IAM_ADMINS_ORG = OrganizationId.from(IAM_ADMINS_NAME);
+    public static final ProjectId IAM_ADMINS_PROJECT = ProjectId.from(IAM_ADMINS_NAME);
+    public static final ClientId IAM_ADMIN_CLIENT = ClientId.from("iam-admin-id");
+
+    private ModelUtils() {}
 
     public static String createId() {
         return UUID.randomUUID().toString();
@@ -28,15 +32,16 @@ public class ModelUtils {
         return RoleId.from(createId());
     }
 
-    public static Model createDefaultModel() {
-        ModelImpl model = new ModelImpl();
-        Organization organization = new Organization(createOrganizationId(), "iam-admins", model);
-        Project project = new Project(createProjectId(), "iam-admins", organization.getId(), model);
-        Client client = new Client(ClientId.from("iam-admin-id"), "iam-admin",project.getId(),TokenUtils.generateKeyPairV2(), 3600 * 1000L);
-        UPCredentials upCredentials = new UPCredentials(client.getId(), "iam-secret-77");
-        organization.add(project);
-        project.add(client);
+    public static Model createDefaultModel(final String iamAdminPassword) {
+        final ModelImpl model = new ModelImpl();
+        final Organization organization = new Organization(IAM_ADMINS_ORG, IAM_ADMINS_NAME);
+        final Project project = new Project(IAM_ADMINS_PROJECT, IAM_ADMINS_NAME, organization.getId());
+        final Client client = new Client(IAM_ADMIN_CLIENT, "iam-admin", project.getId(), TokenUtils.generateKeyPairV2(), 3600*1000L);
+        final UPCredentials upCredentials = new UPCredentials(client.getId(), iamAdminPassword);
         client.addCredentials(upCredentials);
+        project.add(client);
+        organization.add(project);
+        model.add(organization);
         return model;
     }
 }

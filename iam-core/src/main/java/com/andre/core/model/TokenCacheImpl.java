@@ -44,9 +44,11 @@ public class TokenCacheImpl implements TokenCache {
     }
 
     private boolean validateToken(JWToken jwToken) {
-        DefaultClaims defaultClaims = TokenUtils.extractClaims(jwToken);
-        ClientId clientId = ClientId.from(defaultClaims.getSubject());
-        Optional<Client> client = this.model.getClient(clientId);
+        final DefaultClaims defaultClaims = TokenUtils.extractClaims(jwToken);
+        final OrganizationId organizationId = OrganizationId.from(defaultClaims.getIssuer());
+        final ProjectId projectId = ProjectId.from(defaultClaims.getAudience());
+        final ClientId clientId = ClientId.from(defaultClaims.getSubject());
+        final Optional<Client> client = this.model.getClient(organizationId, projectId, clientId);
         if (client.isPresent()) {
             Optional<Jws<Claims>> verify = TokenUtils.verify(jwToken, client.get().getKeyPair());
             return verify.isPresent();

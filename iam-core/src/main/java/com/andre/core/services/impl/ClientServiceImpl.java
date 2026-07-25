@@ -5,7 +5,8 @@ import com.andre.core.model.Client;
 import com.andre.core.model.ClientId;
 import com.andre.core.model.Credentials;
 import com.andre.core.model.Model;
-import com.andre.core.model.Project;
+import com.andre.core.model.OrganizationId;
+import com.andre.core.model.ProjectId;
 import com.andre.core.model.TokenCache;
 import com.andre.core.model.TokenUtils;
 import com.andre.core.services.ClientService;
@@ -22,10 +23,10 @@ import org.slf4j.LoggerFactory;
 
 public class ClientServiceImpl implements ClientService {
 
-    private final Model model;
-    private final TokenCache tokenCache;
     private static final Logger LOG = LoggerFactory.getLogger(ClientServiceImpl.class);
 
+    private final Model model;
+    private final TokenCache tokenCache;
 
     public ClientServiceImpl(Model model, TokenCache tokenCache) {
         this.model = model;
@@ -34,46 +35,43 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Optional<JWToken> authenticate(AuthenticationRequest authenticationRequest) {
-        Optional<Client> clientOptional = model.getClient(authenticationRequest.clientId());
+    public Optional<JWToken> authenticate(OrganizationId organizationId, ProjectId projectId, AuthenticationRequest authenticationRequest) {
+        final Optional<Client> clientOptional = model.getClient(organizationId, projectId, authenticationRequest.getClientId());
         if (clientOptional.isPresent()) {
-            Client client = clientOptional.get();
-            Optional<Credentials> credentials = client.getCredentials(authenticationRequest.getCredentialsType().getClass());
+            final Client client = clientOptional.get();
+            final Optional<Credentials> credentials = client.getCredentials(authenticationRequest.getCredentialsType().getClass());
             if (credentials.isPresent()) {
-                boolean valid = credentials.get().verify(authenticationRequest);
+                final boolean valid = credentials.get().verify(authenticationRequest);
                 if (valid) {
-                    String subject = client.getId().getId();
-                    String issuer = client.getProjectId().getId();
-                    Optional<Project> projectOptional = model.getProject(client.getProjectId());
-                    String projectName = projectOptional.isPresent() ? projectOptional.get().getName() : "";
-                    JWToken token = TokenUtils.issueToken(subject, issuer,
-                        client.getDefaultTokenDuration(), TimeUnit.MILLISECONDS, projectName,
-                        client.getRoles(), client.getKeyPair());
+                    final JWToken token = TokenUtils.issueToken(organizationId, projectId, client.getId(),
+                            client.getDefaultTokenDuration(), TimeUnit.MILLISECONDS,
+                            client.getRoles(), client.getKeyPair());
                     return Optional.of(token);
                 }
             }
         } else {
-            LOG.info("JWT subject {} not found", authenticationRequest.clientId());
+            LOG.info("JWT subject {} not found", authenticationRequest.getClientId());
         }
         return Optional.empty();
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public Optional<JWToken> renew(JWToken token) {
+    public Optional<JWToken> renew(OrganizationId organizationId, ProjectId projectId, JWToken token) {
         if (!tokenCache.isRevoked(token)) {
             DefaultClaims defaultClaims = TokenUtils.extractClaims(token);
             String subject = defaultClaims.getSubject();
-            Optional<Client> client = model.getClient(ClientId.from(subject));
-            if (client.isPresent()) {
-                Optional<Jws<Claims>> claimsOptional = TokenUtils.verify(token, client.get().getKeyPair());
+            Optional<Client> clientOptional = model.getClient(organizationId, projectId, ClientId.from(subject));
+            if (clientOptional.isPresent()) {
+                Client client = clientOptional.get();
+                Optional<Jws<Claims>> claimsOptional = TokenUtils.verify(token, client.getKeyPair());
                 LOG.info("JWT verified={}", claimsOptional.isPresent());
                 if (claimsOptional.isPresent()) {
                     Claims claims = claimsOptional.get().getBody();
                     List<String> roles = (List<String>) claims.get(TokenUtils.ROLES_CLAIM);
-                    JWToken renewedToken = TokenUtils.issueToken(claims.getSubject(), claims.getIssuer(),
-                        client.get().getDefaultTokenDuration(), TimeUnit.MILLISECONDS, claims.getAudience(),
-                        Set.copyOf(roles), client.get().getKeyPair());
+                    JWToken renewedToken = TokenUtils.issueToken(organizationId, projectId, client.getId(),
+                            client.getDefaultTokenDuration(), TimeUnit.MILLISECONDS,
+                            Set.copyOf(roles), client.getKeyPair());
                     tokenCache.addRevokedToken(token);
                     return Optional.of(renewedToken);
                 }
@@ -86,12 +84,11 @@ public class ClientServiceImpl implements ClientService {
         return Optional.empty();
     }
 
-
     @Override
-    public boolean logout(JWToken token) {
+    public boolean logout(OrganizationId organizationId, ProjectId projectId, JWToken token) {
         DefaultClaims defaultClaims = TokenUtils.extractClaims(token);
         String subject = defaultClaims.getSubject();
-        Optional<Client> client = model.getClient(ClientId.from(subject));
+        Optional<Client> client = model.getClient(organizationId, projectId, ClientId.from(subject));
         if (client.isPresent()) {
             Optional<Jws<Claims>> claims = TokenUtils.verify(token, client.get().getKeyPair());
             LOG.info("JWT verified={}", claims.isPresent());
@@ -99,7 +96,7 @@ public class ClientServiceImpl implements ClientService {
                 tokenCache.addRevokedToken(token);
                 return true;
             }
-        }else{
+        } else {
             LOG.info("JWT subject {} not found", subject);
         }
         return false;

@@ -1,6 +1,6 @@
 package com.andre.core.model;
 
-public interface AuthenticationRequest<CT extends CredentialsType> {
-  ClientId clientId();
-  CT getCredentialsType();
+public interface AuthenticationRequest<C extends CredentialsType> {
+  ClientId getClientId();
+  C getCredentialsType();
 }
