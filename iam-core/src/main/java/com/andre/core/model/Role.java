@@ -1,16 +1,21 @@
 package com.andre.core.model;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Role {
     private final RoleId id;
     private final String name;
-    private final Map<String, Permission> permissions;
+    private final Map<PermissionId, Permission> permissions;
 
-    public Role(RoleId id, String name, Map<String, Permission> permissions) {
+
+    public Role(RoleId id, String name) {
         this.id = id;
         this.name = name;
-        this.permissions = permissions;
+        this.permissions = new ConcurrentHashMap<>();
     }
 
     public RoleId getId() {
@@ -19,5 +24,20 @@ public class Role {
 
     public String getName() {
         return name;
+    }
+    public void addPermission(Permission permission) {
+        permissions.put(permission.getId(), permission);
+    }
+
+    public Optional<Permission> getPermission(PermissionId id) {
+        return Optional.ofNullable(permissions.get(id));
+    }
+
+    public Collection<Permission> getPermissions() {
+        return new ArrayList<>(permissions.values());
+    }
+
+    public boolean removePermission(PermissionId id) {
+        return permissions.remove(id) != null;
     }
 }

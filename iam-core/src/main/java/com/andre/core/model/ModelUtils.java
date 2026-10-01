@@ -32,11 +32,11 @@ public class ModelUtils {
         return RoleId.from(createId());
     }
 
-    public static Model createDefaultModel(final String iamAdminPassword) {
+    public static Model createDefaultModel(final String iamAdminPassword) throws PKIException {
         final ModelImpl model = new ModelImpl();
         final Organization organization = new Organization(IAM_ADMINS_ORG, IAM_ADMINS_NAME);
-        final Project project = new Project(IAM_ADMINS_PROJECT, IAM_ADMINS_NAME, organization.getId());
-        final Client client = new Client(IAM_ADMIN_CLIENT, "iam-admin", project.getId(), TokenUtils.generateKeyPairV2(), 3600*1000L);
+        Project project = new Project(IAM_ADMINS_PROJECT, IAM_ADMINS_NAME, organization.getId(), organization.getPrivateKey());
+        Client client = new Client(IAM_ADMIN_CLIENT, "iam-admin", project.getId(), 3600*1000L, project.getPrivateKey());
         final UPCredentials upCredentials = new UPCredentials(client.getId(), iamAdminPassword);
         client.addCredentials(upCredentials);
         project.add(client);

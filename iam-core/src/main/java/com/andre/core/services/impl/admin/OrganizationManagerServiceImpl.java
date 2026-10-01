@@ -3,6 +3,7 @@ package com.andre.core.services.impl.admin;
 import com.andre.core.model.Model;
 import com.andre.core.model.Organization;
 import com.andre.core.model.OrganizationId;
+import com.andre.core.model.PKIException;
 import com.andre.core.services.admin.OrganizationManagerService;
 
 import java.util.Collection;
@@ -17,7 +18,7 @@ public class OrganizationManagerServiceImpl implements OrganizationManagerServic
     }
 
     @Override
-    public boolean create(OrganizationId id, String name) {
+    public boolean create(OrganizationId id, String name) throws PKIException {
         if (model.getOrganization(id).isPresent()) {
             return false;
         } else {

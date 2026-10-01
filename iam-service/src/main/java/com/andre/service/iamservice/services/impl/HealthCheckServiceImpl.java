@@ -1,8 +1,8 @@
 package com.andre.service.iamservice.services.impl;
 
 
-import com.andre.service.iamservice.services.HealthCheckService;
 import com.andre.service.iamservice.dto.HealthCheckResponse;
+import com.andre.service.iamservice.services.HealthCheckService;
 import org.springframework.stereotype.Service;
 
 @Service

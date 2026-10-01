@@ -1,9 +1,13 @@
 package com.andre.core.model;
 
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Organization {
@@ -11,11 +15,13 @@ public class Organization {
     private final OrganizationId id;
     private final String name;
     private final Map<ProjectId, Project> projects;
+    private final KeyPairData keyPairData;
 
-    public Organization(OrganizationId id, String name) {
+    public Organization(OrganizationId id, String name) throws PKIException {
         this.id = id;
         this.name = name;
         this.projects = new ConcurrentHashMap<>();
+        this.keyPairData = TokenUtils.createSelfSignedPKIData(id.getId(), 365L, TimeUnit.DAYS);
     }
 
     public OrganizationId getId() {
@@ -43,5 +49,11 @@ public class Organization {
     public Optional<Project> getProject(ProjectId projectId) {
         return Optional.ofNullable(projects.get(projectId));
     }
+    public PrivateKey getPrivateKey() {
+        return keyPairData.getPrivateKey();
+    }
 
+    public X509Certificate getCertificate() {
+        return keyPairData.getX509Certificate();
+    }
 }

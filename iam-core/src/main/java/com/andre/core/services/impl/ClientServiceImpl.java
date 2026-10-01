@@ -1,25 +1,17 @@
 package com.andre.core.services.impl;
 
-import com.andre.core.model.AuthenticationRequest;
-import com.andre.core.model.Client;
-import com.andre.core.model.ClientId;
-import com.andre.core.model.Credentials;
-import com.andre.core.model.Model;
-import com.andre.core.model.OrganizationId;
-import com.andre.core.model.ProjectId;
-import com.andre.core.model.TokenCache;
-import com.andre.core.model.TokenUtils;
+import com.andre.core.model.*;
 import com.andre.core.services.ClientService;
 import com.andre.core.services.dto.JWToken;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.impl.DefaultClaims;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ClientServiceImpl implements ClientService {
 
@@ -36,16 +28,16 @@ public class ClientServiceImpl implements ClientService {
     @Override
     @SuppressWarnings("unchecked")
     public Optional<JWToken> authenticate(OrganizationId organizationId, ProjectId projectId, AuthenticationRequest authenticationRequest) {
-        final Optional<Client> clientOptional = model.getClient(organizationId, projectId, authenticationRequest.getClientId());
+        Optional<Client> clientOptional = model.getClient(organizationId, projectId, authenticationRequest.getClientId());
         if (clientOptional.isPresent()) {
-            final Client client = clientOptional.get();
-            final Optional<Credentials> credentials = client.getCredentials(authenticationRequest.getCredentialsType().getClass());
+            Client client = clientOptional.get();
+            Optional<Credentials> credentials = client.getCredentials(authenticationRequest.getCredentialsType().getClass());
             if (credentials.isPresent()) {
-                final boolean valid = credentials.get().verify(authenticationRequest);
+                boolean valid = credentials.get().verify(authenticationRequest);
                 if (valid) {
-                    final JWToken token = TokenUtils.issueToken(organizationId, projectId, client.getId(),
+                    JWToken token = TokenUtils.issueToken(organizationId, projectId, client.getId(),
                             client.getDefaultTokenDuration(), TimeUnit.MILLISECONDS,
-                            client.getRoles(), client.getKeyPair());
+                            client.getRoles(), client.getPrivateKey());
                     return Optional.of(token);
                 }
             }
@@ -64,14 +56,14 @@ public class ClientServiceImpl implements ClientService {
             Optional<Client> clientOptional = model.getClient(organizationId, projectId, ClientId.from(subject));
             if (clientOptional.isPresent()) {
                 Client client = clientOptional.get();
-                Optional<Jws<Claims>> claimsOptional = TokenUtils.verify(token, client.getKeyPair());
+                Optional<Jws<Claims>> claimsOptional = TokenUtils.verify(token, client.getCertificate().getPublicKey());
                 LOG.info("JWT verified={}", claimsOptional.isPresent());
                 if (claimsOptional.isPresent()) {
                     Claims claims = claimsOptional.get().getBody();
                     List<String> roles = (List<String>) claims.get(TokenUtils.ROLES_CLAIM);
                     JWToken renewedToken = TokenUtils.issueToken(organizationId, projectId, client.getId(),
                             client.getDefaultTokenDuration(), TimeUnit.MILLISECONDS,
-                            Set.copyOf(roles), client.getKeyPair());
+                            Set.copyOf(roles), client.getPrivateKey());
                     tokenCache.addRevokedToken(token);
                     return Optional.of(renewedToken);
                 }
@@ -90,7 +82,7 @@ public class ClientServiceImpl implements ClientService {
         String subject = defaultClaims.getSubject();
         Optional<Client> client = model.getClient(organizationId, projectId, ClientId.from(subject));
         if (client.isPresent()) {
-            Optional<Jws<Claims>> claims = TokenUtils.verify(token, client.get().getKeyPair());
+            Optional<Jws<Claims>> claims = TokenUtils.verify(token, client.get().getCertificate().getPublicKey());
             LOG.info("JWT verified={}", claims.isPresent());
             if (claims.isPresent()) {
                 tokenCache.addRevokedToken(token);

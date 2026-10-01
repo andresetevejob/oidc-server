@@ -1,29 +1,21 @@
 package com.andre.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import com.andre.core.model.ClientId;
-import com.andre.core.model.Model;
-import com.andre.core.model.ModelUtils;
-import com.andre.core.model.OrganizationId;
-import com.andre.core.model.ProjectId;
-import com.andre.core.model.TokenCache;
-import com.andre.core.model.TokenCacheImpl;
-import com.andre.core.model.TokenUtils;
+import com.andre.core.model.*;
 import com.andre.core.services.dto.JWToken;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.jupiter.api.*;
+
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Security;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class TokenCacheTests {
+public class TokenCacheTests {
 
     private static final OrganizationId ORGANIZATION_ID = OrganizationId.from("unique-organization-id");
     private static final ProjectId PROJECT_ID = ProjectId.from("unique-project-id");
@@ -38,43 +30,44 @@ class TokenCacheTests {
     private static JWToken jwToken;
 
     @BeforeAll
-    static void init() {
+    public static void init() throws NoSuchAlgorithmException, NoSuchProviderException, PKIException {
+        Security.addProvider(new BouncyCastleProvider());
         keyPair = TokenUtils.generateKeyPairV2();
         model = ModelUtils.createDefaultModel("top-secret");
         tokenCache = new TokenCacheImpl(model);
-        jwToken = TokenUtils.issueToken(ORGANIZATION_ID, PROJECT_ID, CLIENT_ID, DURATION, TIME_UNIT, ROLES, keyPair);
+        jwToken = TokenUtils.issueToken(ORGANIZATION_ID, PROJECT_ID, CLIENT_ID, DURATION, TIME_UNIT, ROLES, keyPair.getPrivate());
     }
 
     @Test
     @Order(1)
-    void afterInitializationTest() {
+    public void afterInitializationTest() {
         int size = tokenCache.size();
-        assertEquals(0, size);
+        assertTrue(size == 0);
         assertFalse(tokenCache.isRevoked(jwToken));
     }
 
     @Test
     @Order(2)
-    void addRevokedTokenTest() {
+    public void addRevokedTokenTest() {
         assertFalse(tokenCache.isRevoked(jwToken));
         tokenCache.addRevokedToken(jwToken);
-        assertEquals(1, tokenCache.size());
+        assertTrue(tokenCache.size() == 1);
         assertTrue(tokenCache.isRevoked(jwToken));
     }
 
     @Test
     @Order(3)
-    void waitForTokensToExpireTest() throws InterruptedException {
+    public void waitForTokensToExpireTest() throws InterruptedException {
         while(tokenCache.purgeRevokedTokens() > 0) {
             Thread.sleep(1000);
-        }
+        };
         int size = tokenCache.size();
-        assertEquals(0, size);
+        assertTrue(size == 0);
     }
 
     @Test
     @Order(4)
-    void afterCachePurgeTest() {
+    public void afterCachePurgeTest() {
         assertFalse(tokenCache.isRevoked(jwToken));
     }
 

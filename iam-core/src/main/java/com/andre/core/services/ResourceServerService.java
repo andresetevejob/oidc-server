@@ -1,8 +1,13 @@
 package com.andre.core.services;
 
+import com.andre.core.model.ClientId;
 import com.andre.core.model.OrganizationId;
 import com.andre.core.model.ProjectId;
+import com.andre.core.services.dto.ClientInfo;
 import com.andre.core.services.dto.JWToken;
+import com.andre.core.services.dto.ProjectInfo;
+
+import java.util.Optional;
 
 /**
  *  Service providing verification of {@link JWToken} instances.
@@ -17,5 +22,20 @@ public interface ResourceServerService {
      * @return true if provided {@link JWToken} is valid, false otherwise.
      */
     boolean verify(OrganizationId organizationId, ProjectId projectId,JWToken token);
+    /**
+     * Get public {@link Project} related information. This information contains X509 certificates of organization and project.
+     * @param organizationId {@link OrganizationId} - unique id of the organization.
+     * @param projectId {@link ProjectId} - unique id of the project.
+     * @return Optional of {@link ProjectInfo} instance if project and organization exists, empty otherwise.
+     */
+    Optional<ProjectInfo> getProjectInfo(OrganizationId organizationId, ProjectId projectId);
 
+    /**
+     * Get public {@link Client} related information. This information contains X509 of client.
+     * @param organizationId {@link OrganizationId} - unique id of the organization.
+     * @param projectId {@link ProjectId} - unique id of the project.
+     * @param clientId {@link ClientId} - unique id of the client.
+     * @return Optional of {@link ClientInfo} instance if project, organization and client exists, empty otherwise.
+     */
+    Optional<ClientInfo> getClientInfo(OrganizationId organizationId, ProjectId projectId, ClientId clientId);
 }

@@ -50,7 +50,7 @@ public class TokenCacheImpl implements TokenCache {
         final ClientId clientId = ClientId.from(defaultClaims.getSubject());
         final Optional<Client> client = this.model.getClient(organizationId, projectId, clientId);
         if (client.isPresent()) {
-            Optional<Jws<Claims>> verify = TokenUtils.verify(jwToken, client.get().getKeyPair());
+            final Optional<Jws<Claims>> verify = TokenUtils.verify(jwToken, client.get().getCertificate().getPublicKey());
             return verify.isPresent();
         }
         return false;
